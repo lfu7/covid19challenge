@@ -29,7 +29,7 @@ class Patient(object):
 
 
 class Hospital(object):
-    def __init__(self, name, hours_open, max_num_voters,
+    def __init__(self, name, hours_open, max_num_patients,
                  arrival_rate, stay_duration_rate):
         '''
         Constructor for the Precinct class
@@ -37,14 +37,14 @@ class Hospital(object):
         Input:
             name: (str) Name of the precinct
             hours_open: (int) Hours the precinct will remain open
-            max_num_voters: (int) number of voters in the precinct
+            max_num_patients: (int) number of voters in the precinct
             arrival_rate: (float) rate at which voters arrive
             stay_duration_rate: (float) lambda for voting duration
         '''
 
         self.name = name
         self.hours_open = hours_open
-        self.max_num_voters = max_num_voters
+        self.max_num_patients = max_num_patients
         self.arrival_rate = arrival_rate
         self.stay_duration_rate = stay_duration_rate
 
@@ -99,42 +99,42 @@ class Hospital(object):
         # Create a single queue of VotingBooths class to hold
         # departure times of all people currently IN voting booths
         # Max queue size should be capped at num_booths
-        all_booths = Bed(queue.PriorityQueue(num_booths))
+        all_beds = Bed(queue.PriorityQueue(num_booths))
 
-        for i in range(self.max_num_voters):
-            new_voter = self.next_patient(base_patient)
+        for i in range(self.max_num_patients):
+            new_patient = self.next_patient(base_patient)
 
             # When booths aren't full
-            if not all_booths.check_full(): 
-                new_voter.start_time = new_voter.arrival_time
-                new_voter.departure_time = new_voter.start_time + \
-                new_voter.stay_duration
-                all_booths.add_patient_dep(new_voter.departure_time)
+            if not all_beds.check_full(): 
+                new_patient.start_time = new_patient.arrival_time
+                new_patient.departure_time = new_patient.start_time + \
+                new_patient.stay_duration
+                all_beds.add_patient_dep(new_patient.departure_time)
             
             # When booths are full
             else:
                 # min_departure_time is the earliest departure time among
-                # all people currently in all_booths
-                min_departure_time = all_booths.get_remove_patient_dep()
+                # all people currently in all_beds
+                min_departure_time = all_beds.get_remove_patient_dep()
 
                 # Takes care of people arriving after or before 
                 # a booth opens up
-                if new_voter.arrival_time > min_departure_time:
-                    new_voter.start_time = new_voter.arrival_time
+                if new_patient.arrival_time > min_departure_time:
+                    new_patient.start_time = new_patient.arrival_time
                 else:
-                    new_voter.start_time = min_departure_time
+                    new_patient.start_time = min_departure_time
 
-                new_voter.departure_time = new_voter.start_time + \
-                new_voter.stay_duration
-                all_booths.add_patient_dep(new_voter.departure_time)
+                new_patient.departure_time = new_patient.start_time + \
+                new_patient.stay_duration
+                all_beds.add_patient_dep(new_patient.departure_time)
 
             # Ignores people arriving after booth closed
-            if new_voter.arrival_time <= self.hours_open * 60:
-                patient_list.append(new_voter)
+            if new_patient.arrival_time <= self.hours_open * 60:
+                patient_list.append(new_patient)
 
             # Update base_patient for use in self.next_patient to
-            # generate new_voter
-            base_patient = new_voter
+            # generate new_patient
+            base_patient = new_patient
 
         return patient_list
         
