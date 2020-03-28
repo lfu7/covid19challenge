@@ -37,91 +37,21 @@ Session(app)
 
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///finance.db")
-
+##
 # Make sure API key is set
-if not os.environ.get("API_KEY"):
-    raise RuntimeError("API_KEY not set")
+#if not os.environ.get("API_KEY"):
+    #raise RuntimeError("API_KEY not set")
 
 
 @app.route("/")
 @login_required
 def index():
-    userid=session["user_id"]
-    user = db.execute("SELECT * FROM users WHERE id = :id", id=userid)
-    # Ensure id exists
-    if len(user) != 1:
-        return apology("invalid userid", 400)
 
-    stonks = db.execute("SELECT * FROM stocks WHERE userid = :id", id=userid)
-    #update value of the stonks and sum up value of stocks
-    sum = 0
-    for stonk in stonks:
-        symbol = stonk['symbol']
-        price = lookup(symbol)['price']
-        db.execute("UPDATE stocks SET price = :price WHERE userid = :usid AND symbol = :symbol",
-            usid=userid, symbol=symbol, price = price)
-        sum += price * stonk['shares']
-    stonks = db.execute("SELECT * FROM stocks WHERE userid = :id", id=userid)
-    return render_template("index.html", user=user[0], stonks=stonks, stonk_sum=sum)
 
 
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
 def buy():
-    """Buy shares of stock"""
-    # User reached route via POST (as by submitting a form via POST)
-    if request.method == "POST":
-        stonk=lookup(request.form.get("symbol"))
-
-        # Ensure symbol was submitted
-        if not stonk:
-            return apology("must provide valid symbol", 400)
-
-        # Ensure shares was submitted as positive int
-        try:
-            shares = int(request.form.get("shares"))
-            if not shares or shares <= 0:
-                return apology("must give a positive integer number of shares", 400)
-        except ValueError:
-            return apology("must give a positive integer number of shares", 400)
-
-        price = stonk['price']
-        userid=session["user_id"]
-        query = db.execute("SELECT * FROM users WHERE id = :id",
-                    id=userid)
-        # Ensure id exists
-        if len(query) != 1:
-            return apology("invalid userid", 400)
-
-        cash = query[0]['cash']
-        #checks that user can afford buy
-        if shares * price > cash:
-            return apology("price of purchase cannot exceed your current cash balance", 400)
-
-        #records buy in history
-        symbol=stonk['symbol']
-        db.execute("INSERT INTO history (userid, symbol, shares, price) VALUES(:uid, :symbol, :shares, :price)",
-            uid=userid, symbol=stonk['symbol'], shares=shares, price=price)
-        #records buy in index (i.e. stocks db)
-        holdings = db.execute("SElECT * FROM stocks WHERE userid = :id AND symbol = :symbol",
-            id=userid, symbol=symbol)
-        if (len(holdings) == 0):
-            db.execute("INSERT INTO stocks (userid, symbol, shares) VALUES(:id, :sym, :shares)",
-                id=userid, sym=symbol, shares=shares)
-        elif (len(holdings) == 1):
-            db.execute("UPDATE stocks SET shares = :updated WHERE userid = :usid AND symbol = :symbol",
-                usid=userid, updated=holdings[0]['shares'] + shares, symbol=symbol)
-        else:
-            apology("repeat stocks in index", 400)
-
-        left = cash - shares * price
-        db.execute("UPDATE users SET cash = :left WHERE id = :usid", left=left, usid=userid)
-        return redirect("/")
-
-    # User reached route via GET (as by clicking a link or via redirect)
-    else:
-        return render_template("buy.html")
-
 
 @app.route("/check", methods=["GET"])
 def check():
@@ -195,21 +125,6 @@ def logout():
 @app.route("/quote", methods=["GET", "POST"])
 @login_required
 def quote():
-    """Get stock quote."""
-    if request.method == "POST":
-
-        # Ensure stock was submitted
-        stock = request.form.get("symbol")
-        res=lookup(stock)
-        if not stock or not res:
-            return apology("must provide valid stock symbol", 400)
-        #return quote
-        return render_template("quoted.html", result=res, name=res['name'],
-            price=res['price'], symbol=res['symbol'])
-
-    # User reached route via GET (as by clicking a link or via redirect)
-    else:
-        return render_template("quote.html")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -247,58 +162,7 @@ def register():
 @app.route("/sell", methods=["GET", "POST"])
 @login_required
 def sell():
-    """Sell shares of stock"""
-    userid=session["user_id"]
-    if request.method == "POST":
-        # Ensure symbol was submitted
-        symbol = request.form.get("symbol")
-        stonks = db.execute("SELECT * FROM stocks WHERE userid = :id AND symbol = :symbol",
-            id=userid, symbol=symbol)
-        if not symbol or not stonks:
-            return apology("must provide valid symbol", 400)
-        if (len(stonks) > 1):
-            return apology("index repeat error", 400)
 
-        # Ensure shares was submitted as positive int
-        try:
-            shares = int(request.form.get("shares"))
-            if not shares or shares <= 0:
-                return apology("must give a positive integer number of shares", 400)
-        except ValueError:
-            return apology("must give a positive integer number of shares", 400)
-        #checks user owns enough shares to sell
-        if (shares > stonks[0]['shares']):
-            return apology("you do not own that many shares of stock", 400)
-
-        query = db.execute("SELECT * FROM users WHERE id = :id",
-                    id=userid)
-        # Ensure id exists
-        if len(query) != 1:
-            return apology("invalid userid", 400)
-
-        #update history with sale (type = 1 for sale)
-        price = lookup(symbol)['price']
-        db.execute("INSERT INTO history (userid, symbol, shares, price, type)"
-            "VALUES(:uid, :symbol, :shares, :price, :type)",
-            uid=userid, symbol=symbol, shares=shares, price=price, type=1)
-
-        #update stock holdings with sale
-        holdings = db.execute("SELECT * FROM stocks WHERE userid = :id AND symbol =:symbol",
-            id=userid, symbol=symbol)
-        if (holdings[0]['shares'] > shares):
-            db.execute("UPDATE stocks SET shares = :updated WHERE userid = :usid",
-                updated=holdings[0]['shares'] - shares, usid=userid)
-        if (holdings[0]['shares'] == shares):
-            db.execute("DELETE FROM stocks WHERE userid = :usid AND symbol =:symbol", symbol=symbol, usid=userid)
-        #update user cash
-        payday= query[0]['cash'] + shares*price
-        db.execute("UPDATE users SET cash = :updated WHERE id = :usid", updated=payday, usid=userid)
-        return redirect("/")
-
-    # User reached route via GET (as by clicking a link or via redirect)
-    else:
-        stonks = db.execute("SELECT * FROM stocks WHERE userid = :id", id=userid)
-        return render_template("sell.html", stonks=stonks)
 
 
 def errorhandler(e):

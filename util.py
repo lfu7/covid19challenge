@@ -118,5 +118,3 @@ def print_voters(voters, filename=None):
             dt = s.format(v.start_time + v.voting_duration)
         combined = "{}   {}       {}        {}\n"
         print(combined.format(at, vd, st, dt), file=file)
-
-
