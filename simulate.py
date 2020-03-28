@@ -1,11 +1,3 @@
-'''
-Polling places
-
-Calvin Zhang and Xuechen Hong
-
-Main file for polling place simulation
-'''
-
 import sys
 import random
 import queue
@@ -13,27 +5,32 @@ import util
 
 
 class Patient(object):
-    def __init__(self, arrival_time, voting_duration):
+    def __init__(self, arrival_time, stay_duration, covid, age, condition, location):
         '''
         Constructor for the Voter class
 
         Input:
             arrival_time: (float) Time in minutes at which the voter arrives
-            voting_duration: (float) Time in minutes the voter stays
+            stay_duration: (float) Time in minutes the voter stays
             in the voting booth
         '''
-
         self.arrival_time = arrival_time
-        self.voting_duration = voting_duration
+        self.stay_duration = stay_duration
+        self.covid = covid
+        self.age = age
+        self.condition = condition
+        self.location = location
+        self.assigned_bed = assigned_bed
 
         # start_time and departure_time will be calculated later
         self.start_time = None
         self.departure_time = None
+        self.assigned_bed = None
 
 
 class Hospital(object):
     def __init__(self, name, hours_open, max_num_voters,
-                 arrival_rate, voting_duration_rate):
+                 arrival_rate, stay_duration_rate):
         '''
         Constructor for the Precinct class
 
@@ -42,40 +39,43 @@ class Hospital(object):
             hours_open: (int) Hours the precinct will remain open
             max_num_voters: (int) number of voters in the precinct
             arrival_rate: (float) rate at which voters arrive
-            voting_duration_rate: (float) lambda for voting duration
+            stay_duration_rate: (float) lambda for voting duration
         '''
 
         self.name = name
         self.hours_open = hours_open
         self.max_num_voters = max_num_voters
         self.arrival_rate = arrival_rate
-        self.voting_duration_rate = voting_duration_rate
+        self.stay_duration_rate = stay_duration_rate
 
 
-    def next_voter(self, prev_voter):
+    def next_patient(self, prev_patient):
         '''
         Generate the next voter as Voter object given the previous voter
 
         Inputs:
-            prev_voter: the previous Voter object with arrival_time and
-                        voting_duration attributes
+            prev_patient: the previous Voter object with arrival_time and
+                        stay_duration attributes
 
         Return:
-            next_voter: Voter object of next voter with new arrival_time
-                        and voting_duration atrributes
+            next_patient: Voter object of next voter with new arrival_time
+                        and stay_duration atrributes
         '''
 
         # Extract gap between arrival times and new voting duration
         # from poisson
-        gap, voting_duration = util.gen_poisson_voter_parameters(\
-        self.arrival_rate, self.voting_duration_rate)
-        new_arrival_time = prev_voter.arrival_time + gap
-        next_voter = Patient(new_arrival_time, voting_duration)
+        gap, stay_duration = util.gen_poisson_voter_parameters(\
+        self.arrival_rate, self.stay_duration_rate)
+        ### We need to find the average stay duration or choose some sort of probabalistic model for how lnog patients stay ###
+        new_arrival_time = prev_patient.arrival_time + gap
+        next_patient = Patient(new_arrival_time, stay_duration)
 
-        return next_voter
+        return next_patient
 
 
     def simulate(self, seed, num_booths):
+
+    	### Can change this to take in some pre randomized list of patients ###
         '''
         Simulate a day of voting
 
@@ -90,11 +90,11 @@ class Hospital(object):
         random.seed(seed)
 
         # Initialize return list
-        voter_list = []
+        patient_list = []
 
         # Initialize default base voter (not the first voter!)
-        # as reference voter in self.next_voter
-        base_voter = Patient(0, 0)
+        # as reference voter in self.next_patient
+        base_patient = Patient(0, 0)
 
         # Create a single queue of VotingBooths class to hold
         # departure times of all people currently IN voting booths
@@ -102,20 +102,20 @@ class Hospital(object):
         all_booths = Bed(queue.PriorityQueue(num_booths))
 
         for i in range(self.max_num_voters):
-            new_voter = self.next_voter(base_voter)
+            new_voter = self.next_patient(base_patient)
 
             # When booths aren't full
             if not all_booths.check_full(): 
                 new_voter.start_time = new_voter.arrival_time
                 new_voter.departure_time = new_voter.start_time + \
-                new_voter.voting_duration
-                all_booths.add_voter_dep(new_voter.departure_time)
+                new_voter.stay_duration
+                all_booths.add_patient_dep(new_voter.departure_time)
             
             # When booths are full
             else:
                 # min_departure_time is the earliest departure time among
                 # all people currently in all_booths
-                min_departure_time = all_booths.get_remove_voter_dep()
+                min_departure_time = all_booths.get_remove_patient_dep()
 
                 # Takes care of people arriving after or before 
                 # a booth opens up
@@ -125,18 +125,18 @@ class Hospital(object):
                     new_voter.start_time = min_departure_time
 
                 new_voter.departure_time = new_voter.start_time + \
-                new_voter.voting_duration
-                all_booths.add_voter_dep(new_voter.departure_time)
+                new_voter.stay_duration
+                all_booths.add_patient_dep(new_voter.departure_time)
 
             # Ignores people arriving after booth closed
             if new_voter.arrival_time <= self.hours_open * 60:
-                voter_list.append(new_voter)
+                patient_list.append(new_voter)
 
-            # Update base_voter for use in self.next_voter to
+            # Update base_patient for use in self.next_patient to
             # generate new_voter
-            base_voter = new_voter
+            base_patient = new_voter
 
-        return voter_list
+        return patient_list
         
 
 class Bed(object):
@@ -152,22 +152,22 @@ class Bed(object):
         self._bed_queue = bed_queue
 
 
-    def add_voter_dep(self, voter_dep):
+    def add_patient_dep(self, patient_dep):
         '''
         Adds voters' departure time in minutes to _booth_queue attribute
         of VotingBooths object
 
         Inputs:
-            voter_dep: (float) Departure time of a voter in minutes
+            patient_dep: (float) Departure time of a voter in minutes
 
         Return:
             Doesn't return anything new. Just modifies _booth_queue. 
         '''
 
-        self._bed_queue.put(voter_dep, block=False)
+        self._bed_queue.put(patient_dep, block=False)
 
 
-    def get_remove_voter_dep(self):
+    def get_remove_patient_dep(self):
         '''
         Extracts and removes earliest (minimum) voter departure time
         from the _booth_queue attribute.
@@ -214,9 +214,11 @@ def find_avg_wait_time(hospital, num_beds, ntrials, initial_seed=0):
 
     # Use information in precinct dictionary to construct Precinct
     # object
+
+    ### Need to get hospital data from the US list ###
     hospital_object = Hospital(hospital["name"], hospital["hours_open"],
                                hospital["num_voters"], hospital["voter_distribution"]["arrival_rate"],
-                               hospital["voter_distribution"]["voting_duration_rate"])
+                               hospital["voter_distribution"]["stay_duration_rate"])
 
     # Accumulate list of trial averages.
     trial_averages = []
@@ -259,7 +261,8 @@ def find_number_of_booths(hospital, target_wait_time, max_num_beds,
 
         If the target waiting time is infeasible, returns (0, None)
     '''
-
+    ### Can use this to find the optimal number of beds for different hospitals ###
+    
     for num_beds in range(1, max_num_beds + 1):
         avg_wait_time = find_avg_wait_time(hospital, num_beds, ntrials,
                                            seed)
