@@ -45,8 +45,7 @@ if not os.environ.get("API_KEY"):
 
 @app.route("/")
 @login_required
-def index():
-    print("hello");
+def welcome():
     userid=session["user_id"]
     accounttype=session["account_type"]
 
@@ -56,23 +55,16 @@ def index():
         if len(user) != 1:
             return apology("invalid userid", 400)
 
+        return render_template("patient.html", user=user[0])
+
+
     elif (accounttype==1):
         user = db.execute("SELECT * FROM hospitals WHERE id = :id", id=userid)
         # Ensure id exists
         if len(user) != 1:
             return apology("invalid userid", 400)
-
-    #stonks = db.execute("SELECT * FROM stocks WHERE userid = :id", id=userid)
-    #update value of the stonks and sum up value of stocks
-    #sum = 0
-    #for stonk in stonks:
-    #    symbol = stonk['symbol']
-    #    price = lookup(symbol)['price']
-    #    db.execute("UPDATE stocks SET price = :price WHERE userid = :usid AND symbol = :symbol",
-    #        usid=userid, symbol=symbol, price = price)
-    #    sum += price * stonk['shares']
-    #stonks = db.execute("SELECT * FROM stocks WHERE userid = :id", id=userid)
-    return render_template("patient.html", user=user[0])
+        
+        return render_template("hospital.html", user=user[0])
 
 
 
@@ -183,6 +175,21 @@ def register():
     # User reached route via GET (as by clicking a link or via redirect)
     else:
         return render_template("register.html")
+
+
+#patient form
+@app.route("/request_form", methods=["GET", "POST"])
+@login_required
+def form():
+    print("hello");
+    if request.method=="POST":
+        return
+
+    else:
+        return render_template("request_visit.html")
+
+
+
 
 def errorhandler(e):
     """Handle error"""
