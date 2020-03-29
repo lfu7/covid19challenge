@@ -217,7 +217,7 @@ def find_avg_wait_time(hospital, num_beds, ntrials, initial_seed=0):
 
     ### Need to get hospital data from the US list ###
     hospital_object = Hospital(hospital["name"], hospital["hours_open"],
-                               hospital["num_voters"], hospital["voter_distribution"]["arrival_rate"],
+                               hospital["num_patients"], hospital["voter_distribution"]["arrival_rate"],
                                hospital["voter_distribution"]["stay_duration_rate"])
 
     # Accumulate list of trial averages.
