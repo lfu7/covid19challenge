@@ -27,7 +27,7 @@ def after_request(response):
     return response
 
 # Custom filter
-app.jinja_env.filters["usd"] = usd
+#app.jinja_env.filters["usd"] = usd
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_FILE_DIR"] = mkdtemp()
@@ -47,31 +47,62 @@ db = SQL("sqlite:///finance.db")
 @login_required
 def index():
 
-
-
-@app.route("/buy", methods=["GET", "POST"])
+@app.route("/patient", methods=["GET", "POST"])
 @login_required
-def buy():
-
-@app.route("/check", methods=["GET"])
-def check():
-    """Return true if username available, else false, in JSON format"""
-    username = request.args.get("username")
-    if (len(username) == 0):
-        return jsonify(False)
-    matches = db.execute("SELECT * FROM users WHERE username = :uname", uname=username)
-    if (len(matches) == 0):
-        return jsonify(True)
+def patient():
+    #TODO: if submitted form already, get waittime
+    if request.method == "GET":
+        #form
+        return render_template("patient.html")
     else:
-        return jsonify(False)
+        #grab stuff from form
+        return render_template("waittime.html")
 
 
-@app.route("/history")
+    '''
+    if request.method == "GET":
+        #interface patient.html (request new visit/existing visit, past visit)
+        return render_template(patient.html)
+    else:
+        #grab stuff from form
+        return redirect("/patientform")
+
+    '''
+
+
+
+@app.route("/hospital", methods=["GET", "POST"])
 @login_required
-def history():
-    """Show history of transactions"""
-    histories=db.execute("SELECT * FROM history WHERE userid=:userid", userid=session["user_id"])
-    return render_template("history.html", stonks=histories)
+def hospital():
+    if request.method == "GET":
+        return render_template("hospital.html")
+        #hospital.html has managing resources, select decision policy, queue
+        #(maybe in nav bar, have hospital_layout.html)
+@app.route("/resources", methods=["GET", "POST"])
+@login_required
+def hospital_resources():
+    #input/initialize what resources you have
+    #display resources in resources.html (beds whatever)
+
+@app.route("/queue", methods=["GET", "POST"])
+@login_required
+def hospital_queue():
+    #form tells you based on policy, what patients you should consider admitting
+    #what resources they Required
+
+    #if you do admit, you can update hospital_resources what resources you allocated (talk to db)
+
+@app.route("/policy", methods=["GET", "POST"])
+@login_required
+def hospital_policy():
+    if request.method == "GET":
+        #render form
+    #form where you can toggle policy
+    #have some arbitrary number scoring system
+    #what you prioritize or whatnot (age, risk, symptoms, covid/non-covid)
+    #also have premade algorithm
+    else:
+        #submit/update policy info for hospital
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -102,9 +133,13 @@ def login():
 
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
-
-        # Redirect user to home page
-        return redirect("/")
+        #grab boolean from login form
+        patient = request.form.get("type")
+        #if your patients
+        if (patient):
+            return redirect("/patient")
+        else:
+            return redirect("/hospital")
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
@@ -121,14 +156,10 @@ def logout():
     # Redirect user to login form
     return redirect("/")
 
-
-@app.route("/quote", methods=["GET", "POST"])
-@login_required
-def quote():
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
+    #TODO: modify to register as patient or hospital
 
     # Forget any user_id (not sure if necessary)
     # session.clear()
@@ -157,12 +188,6 @@ def register():
     # User reached route via GET (as by clicking a link or via redirect)
     else:
         return render_template("register.html")
-
-
-@app.route("/sell", methods=["GET", "POST"])
-@login_required
-def sell():
-
 
 
 def errorhandler(e):

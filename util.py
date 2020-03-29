@@ -108,13 +108,15 @@ def print_voters(voters, filename=None):
         s = "{:10.2f}"
         none_str = "      None"
         at = s.format(v.arrival_time) if v.arrival_time else none_str
-        vd = s.format(v.voting_duration) if v.voting_duration else none_str
+        vd = s.format(v.time_in_hospital) if v.time_in_hospital else none_str
         st = s.format(v.start_time) if v.start_time else none_str
         if v.arrival_time is None or \
-           v.voting_duration is None or \
+           v.time_in_hospital is None or \
            v.start_time is None:
             dt = none_str
         else:
-            dt = s.format(v.start_time + v.voting_duration)
+            dt = s.format(v.start_time + v.time_in_hospital)
         combined = "{}   {}       {}        {}\n"
         print(combined.format(at, vd, st, dt), file=file)
+
+
