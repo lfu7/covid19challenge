@@ -12,7 +12,7 @@ import sys
 # pylint: disable-msg= invalid-name, too-many-arguments, line-too-long
 # pylint: disable-msg= too-many-branches
 
-def gen_poisson_voter_parameters(arrival_rate, voting_duration_rate):
+def gen_poisson_patient_parameters(stay_duration_rate):
     '''
     Draw gap and voting duration from exponetial distribution
 
@@ -23,8 +23,7 @@ def gen_poisson_voter_parameters(arrival_rate, voting_duration_rate):
     Returns:
         (gap, voting duration) as a pair of floats
     '''
-    return (random.expovariate(arrival_rate),
-            random.expovariate(voting_duration_rate))
+    return (random.expovariate(stay_duration_rate))
 
 
 def load_precincts(precincts_filename):

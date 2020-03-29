@@ -2,10 +2,17 @@ import sys
 import random
 import queue
 import util
+import pandas as pd 
+import numpy as np
 
+AGE_MULTIPLIER = 0.1
+PRE_EXISTING_CONDITION_MULTIPLIER = 10
+HIGH_SCORE = 100
+HIGH_SCORE_PENALTY = 10
+TROUBLE_BREATHING_MULTIPLIER = 10
 
 class Patient(object):
-    def __init__(self, arrival_time, stay_duration, covid, age, condition, location):
+    def __init__(self, patient_id, query_time, trouble_breathing, covid, age, pre_existing_condition, location):
         '''
         Constructor for the Voter class
 
@@ -14,18 +21,41 @@ class Patient(object):
             stay_duration: (float) Time in minutes the voter stays
             in the voting booth
         '''
-        self.arrival_time = arrival_time
-        self.stay_duration = stay_duration
+        self.patient_id = patient_id
+        self.query_time = query_time
+        self.trouble_breathing = trouble_breathing
         self.covid = covid
         self.age = age
-        self.condition = condition
+        self.pre_existing_condition = pre_existing_condition
         self.location = location
-        self.assigned_bed = assigned_bed
 
         # start_time and departure_time will be calculated later
         self.start_time = None
         self.departure_time = None
         self.assigned_bed = None
+        self.arrival_time = None
+        self.stay_duration = None
+
+        self.priority = None
+
+def get_priority(patient_obj, age_multiplier = AGE_MULTIPLIER, pre_existing_condition_multiplier = PRE_EXISTING_CONDITION_MULTIPLIER,
+    high_score = HIGH_SCORE, high_score_penalty = HIGH_SCORE_PENALTY, trouble_breathing_multiplier = TROUBLE_BREATHING_MULTIPLIER):
+    priority_score = age_multiplier * patient_obj.age + pre_existing_condition_multiplier * patient_obj.pre_existing_condition + \
+        trouble_breathing_multiplier * patient_obj.trouble_breathing
+    if priority_score >= HIGH_SCORE:
+        priority_score -= HIGH_SCORE_PENALTY
+    return priority_score
+
+def generate_patient_obj_list(patient_df):
+    patient_lst = []
+    for index, row in patient_df.iterrows():
+        current_patient = Patient(row["patient_id"], row["query_time"], row["trouble_breathing"], row["covid"], row["age"],
+            row["pre_existing_condition"], row["location"])
+        current_patient.priority = get_priority(current_patient)
+        patient_lst.append(current_patient)
+    lst = sorted(patient_lst, key=lambda x: x.priority, reverse=True)
+    return lst
+
 
 
 class Hospital(object):
@@ -49,7 +79,7 @@ class Hospital(object):
         self.stay_duration_rate = stay_duration_rate
 
 
-    def next_patient(self, prev_patient):
+    def generate_stay_duration(self, prev_patient):
         '''
         Generate the next voter as Voter object given the previous voter
 
@@ -64,12 +94,13 @@ class Hospital(object):
 
         # Extract gap between arrival times and new voting duration
         # from poisson
-        gap, stay_duration = util.gen_poisson_voter_parameters(\
-        self.arrival_rate, self.stay_duration_rate)
-        
+                
         ### We need to find the average stay duration or choose some sort of probabalistic model for how lnog patients stay ###
-
+        gap = gen_poisson_patient_parameters(stay_duration_rate)
         new_arrival_time = prev_patient.arrival_time + gap
+
+        ### need to change next patient creator ###
+
         next_patient = Patient(new_arrival_time, stay_duration)
 
         return next_patient
@@ -77,7 +108,7 @@ class Hospital(object):
 
     def simulate(self, seed, num_booths):
 
-    	### Can change this to take in some pre randomized list of patients ###
+        ### Can change this to take in some pre randomized list of patients ###
         '''
         Simulate a day of voting
 
@@ -139,7 +170,11 @@ class Hospital(object):
             base_patient = new_patient
 
         return patient_list
-        
+
+'''
+Have a list of patients and then we add new patient, take list of people before the added patient
+then simulate until we get to the current patient and return wait time and update the list of patients.
+'''
 
 class Bed(object):
     def __init__(self, bed_queue):
@@ -273,4 +308,9 @@ def find_number_of_booths(hospital, target_wait_time, max_num_beds,
             return (num_beds, avg_wait_time)
         
     return (0, None)
+
+header_list = ["patient_id", "query_time", "trouble_breathing", "covid", "age", "pre_existing_condition", "location"]
+df = pd.read_csv("trial_priority_data-Sheet1.csv", names=header_list)
+
+
 
