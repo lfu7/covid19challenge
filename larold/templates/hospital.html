@@ -9,8 +9,9 @@
 Welcome, Hospital {{user['username']}}! <br>
 
 Current Resources Available:
-Total Value: {{'%d' % (user['cash'] + stonk_sum)|float}}<br>
-Cash: {{'%d' % user['cash']|float}} <br>
-Stocks: {{'%d' % stonk_sum|float}}
+Bed Capacity: {{'%d' % (user['cash'] + stonk_sum)|float}}<br>
+Available Beds: {{'%d' % user['cash']|float}} <br>
+Doctors: {{'%d' % stonk_sum|float}}
+Nurses:
 
 {% endblock %}
