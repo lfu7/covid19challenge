@@ -39,8 +39,8 @@ Session(app)
 db = SQL("sqlite:///hospitals.db")
 
 # Make sure API key is set
-if not os.environ.get("API_KEY"):
-    raise RuntimeError("API_KEY not set")
+#if not os.environ.get("API_KEY"):
+    #raise RuntimeError("API_KEY not set")
 
 
 @app.route("/")
@@ -63,7 +63,7 @@ def welcome():
         # Ensure id exists
         if len(user) != 1:
             return apology("invalid userid", 400)
-        
+
         return render_template("hospital.html", user=user[0])
 
 
