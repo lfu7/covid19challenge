@@ -83,10 +83,10 @@ def hospital_resources():
 @login_required
 def hospital_queue():
     if request.method == "GET":
-        return render_template("resources.html")
+        return render_template("queue.html")
     #form tells you based on policy, what patients you should consider admitting
     #what resources they Required
-
+    #age, troublebreathing, preexisting condition multiplier
     #if you do admit, you can update hospital_resources what resources you allocated (talk to db)
 
 @app.route("/decision_policy", methods=["GET", "POST"])
