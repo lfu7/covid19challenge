@@ -69,14 +69,21 @@ def welcome():
 @app.route("/manage_resources", methods=["GET", "POST"])
 @login_required
 def hospital_resources():
+    userid=session["user_id"]
+    user = db.execute("SELECT * FROM hospitals WHERE id = :id", id=userid)
+    # Ensure id exists
+    if len(user) != 1:
+        return apology("invalid userid", 400)
     if request.method == "GET":
-        return render_template("resources.html")
+        return render_template("resources.html", user=user[0])
     #input/initialize what resources you have
     #display resources in resources.html (beds whatever)
 
 @app.route("/queue", methods=["GET", "POST"])
 @login_required
 def hospital_queue():
+    if request.method == "GET":
+        return render_template("resources.html")
     #form tells you based on policy, what patients you should consider admitting
     #what resources they Required
 
@@ -86,12 +93,13 @@ def hospital_queue():
 @login_required
 def hospital_policy():
     if request.method == "GET":
+        return render_template("policy.html")
         #render form
     #form where you can toggle policy
     #have some arbitrary number scoring system
     #what you prioritize or whatnot (age, risk, symptoms, covid/non-covid)
     #also have premade algorithm
-    else:
+    #else:
         #submit/update policy info for hospital
 
 
