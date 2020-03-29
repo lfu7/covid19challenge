@@ -56,8 +56,6 @@ def generate_patient_obj_list(patient_df):
     lst = sorted(patient_lst, key=lambda x: x.priority, reverse=True)
     return lst
 
-
-
 class Hospital(object):
     def __init__(self, name, hours_open, max_num_patients,
                  arrival_rate, stay_duration_rate):
@@ -96,17 +94,12 @@ class Hospital(object):
         # from poisson
                 
         ### We need to find the average stay duration or choose some sort of probabalistic model for how lnog patients stay ###
-        gap = gen_poisson_patient_parameters(stay_duration_rate)
-        new_arrival_time = prev_patient.arrival_time + gap
+        gap = gen_poisson_patient_parameters(self.stay_duration_rate)
 
-        ### need to change next patient creator ###
-
-        next_patient = Patient(new_arrival_time, stay_duration)
-
-        return next_patient
+        return gap
 
 
-    def simulate(self, seed, num_booths):
+    def simulate(self, seed, num_beds):
 
         ### Can change this to take in some pre randomized list of patients ###
         '''
@@ -114,14 +107,14 @@ class Hospital(object):
 
         Input:
             seed: (int) Random seed to use in the simulation
-            num_booths: (int) Number of booths to use in the simulation
+            num_beds: (int) Number of booths to use in the simulation
 
         Return:
             List of voters who voted in the precinct
         '''
         
         random.seed(seed)
-
+        
         # Initialize return list
         patient_list = []
 
@@ -131,8 +124,8 @@ class Hospital(object):
 
         # Create a single queue of VotingBooths class to hold
         # departure times of all people currently IN voting booths
-        # Max queue size should be capped at num_booths
-        all_beds = Bed(queue.PriorityQueue(num_booths))
+        # Max queue size should be capped at num_beds
+        all_beds = Bed(queue.PriorityQueue(num_beds))
 
         for i in range(self.max_num_patients):
             new_patient = self.next_patient(base_patient)
@@ -240,7 +233,7 @@ def find_avg_wait_time(hospital, num_beds, ntrials, initial_seed=0):
 
     Input:
         precinct: (dictionary) A precinct dictionary
-        num_booths: (int) The number of booths to simulate the precinct with
+        num_beds: (int) The number of booths to simulate the precinct with
         ntrials: (int) The number of trials to run
         initial_seed: (int) initial seed for random number generator
 
@@ -283,15 +276,15 @@ def find_number_of_booths(hospital, target_wait_time, max_num_beds,
     Input:
         precinct: (dictionary) A precinct dictionary
         target_wait_time: (float) The desired (maximum) waiting time
-        max_num_booths: (int) The maximum number of booths this
+        max_num_beds: (int) The maximum number of booths this
                         precinct can support
         ntrials: (int) The number of trials to run when computing
                  the average waiting time
         seed: (int) A random seed
 
     Output:
-        A tuple (num_booths, waiting_time) where:
-        - num_booths: (int) The smallest number of booths that ensures
+        A tuple (num_beds, waiting_time) where:
+        - num_beds: (int) The smallest number of booths that ensures
                       the average waiting time is below target_waiting_time
         - waiting_time: (float) The actual average waiting time with that
                         number of booths
