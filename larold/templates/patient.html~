@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Summary
+{% endblock %}
+
+{% block main %}
+
+Welcome, {{user['username']}}! <br>
