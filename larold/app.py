@@ -263,9 +263,97 @@ def register():
 @app.route("/request_visit", methods=["GET", "POST"])
 @login_required
 def form():
-    print("hello");
+    userid=session["user_id"]
     if request.method=="POST":
-        return
+        # Ensure username was submitted
+        if not request.form.get("name"):
+            return apology("must provide name", 400)
+
+        #ensure age
+        if not request.form.get("age"):
+            return apology("must provide age", 400)
+
+        #ensure zip
+        if not request.form.get("zip"):
+            return apology("must provide zip", 400)
+
+
+        #add fields to db
+        db.execute("UPDATE patients SET name= :name WHERE id = :usid",
+                usid=userid, name=request.form.get("name"))
+
+        db.execute("UPDATE patients SET age= :age WHERE id = :usid",
+                usid=userid, age=request.form.get("age"))
+
+        db.execute("UPDATE patients SET zip= :zip WHERE id = :usid",
+                usid=userid, zip=request.form.get("zip"))
+
+
+        #symptoms
+        if (request.form.get("symptom1")=="Fevers"):
+            db.execute("UPDATE patients SET fever= 1 WHERE id = :usid",
+                       usid=userid)
+
+        if (request.form.get("symptom2")=="Breathing"):
+            db.execute("UPDATE patients SET breathing= 1 WHERE id = :usid",
+                       usid=userid)
+
+        if (request.form.get("symptom3")=="Cough"):
+            db.execute("UPDATE patients SET cough= 1 WHERE id = :usid",
+                       usid=userid)
+
+        if (request.form.get("symptom4")=="Sore_Throat"):
+            db.execute("UPDATE patients SET sore_throat= 1 WHERE id = :usid",
+                       usid=userid)
+
+        if (request.form.get("symptom5")=="Aching"):
+            db.execute("UPDATE patients SET aching= 1 WHERE id = :usid",
+                       usid=userid)
+
+        if (request.form.get("symptom6")=="Nausea"):
+            db.execute("UPDATE patients SET nausea= 1 WHERE id = :usid",
+                       usid=userid)
+
+        #conditions
+        if (request.form.get("condition1")=="Asthma"):
+            db.execute("UPDATE patients SET asthma= 1 WHERE id = :usid",
+                       usid=userid)
+
+        if (request.form.get("condition2")=="Pregnancy"):
+            db.execute("UPDATE patients SET pregnancy= 1 WHERE id = :usid",
+                       usid=userid)
+
+        if (request.form.get("condition3")=="WeakenedIS"):
+            db.execute("UPDATE patients SET weakened_is= 1 WHERE id = :usid",
+                       usid=userid)
+
+        if (request.form.get("condition4")=="Diabetes"):
+            db.execute("UPDATE patients SET diabetes= 1 WHERE id = :usid",
+                       usid=userid)
+
+        if (request.form.get("condition5")=="Kidney"):
+            db.execute("UPDATE patients SET kidney= 1 WHERE id = :usid",
+                       usid=userid)
+
+        if (request.form.get("condition6")=="Obesity"):
+            db.execute("UPDATE patients SET obesity= 1 WHERE id = :usid",
+                       usid=userid)
+
+        #exposure
+        if (request.form.get("exposure1")=="International"):
+            db.execute("UPDATE patients SET international= 1 WHERE id = :usid",
+                       usid=userid)
+
+        if (request.form.get("exposure2")=="Residence"):
+            db.execute("UPDATE patients SET residence= 1 WHERE id = :usid",
+                       usid=userid)
+
+        if (request.form.get("exposure3")=="Contact"):
+            db.execute("UPDATE patients SET contact= 1 WHERE id = :usid",
+                       usid=userid)
+
+
+        return redirect("/")
 
     else:
         return render_template("request_visit.html")

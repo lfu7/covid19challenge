@@ -45,11 +45,3 @@ main img
     /* constrain images on small screens */
     max-width: 100%;
 }
-
-#wrapper
-{
-  border: 1px solid #888;
-  display: block;
-  padding:20px;
-  text-align: left
-}
