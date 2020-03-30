@@ -109,7 +109,8 @@ def hospital_queue():
         return apology("invalid userid", 400)
     if request.method == "GET":
         ns = db.execute("SELECT DISTINCT name FROM policies WHERE hospital_id =:hid", hid=userid)
-        return render_template("queue.html", names=ns)
+        patientcount = db.execute("SELECT COUNT(id) FROM patients_cond WHERE zip = :zip", zip=user[0]['zip'])
+        return render_template("queue.html", names=ns, patientcount)
     else:
         policies = db.execute("SELECT * FROM policies WHERE hospital_id =:hid", hid=userid)
         age_mult = policies[0]["age_mult"]
