@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Implement a Policy
+{% endblock %}
+
+{% block main %}
+
+Choose a policy to implement<br>
+
+<br>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Stock</th>
+      <th scope="col">Price</th>
+      <th scope="col">Shares</th>
+      <th scope="col">Time</th>
+      <th scope="col">Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in patients %}
+      <tr>
+        <td>{{ row['symbol'] }}</td>
+        <td>{{ row['price'] }}</td>
+        <td>{{ row['shares'] }}</td>
+        <td>{{ row['timestamp'] }}</td>
+        {% if row['type'] == 0 %}
+            <td>Buy</td>
+        {% else %}
+            <td>Sell</td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+<form action="/queue" method="post">
+        Policy Name(s):
+          <select name = "policyname"
+            class="form-control">
+            <option disabled selected value="">Policy Name</option>
+            {% for name in names %}
+              <option value={{name['name']}}>{{name['name']}}</option>
+            {% endfor %}
+          </select>
+<br><br>
+        <button class="btn btn-primary" type="submit">Fetch Candidates</button>
+</form>
+{% endblock %}
