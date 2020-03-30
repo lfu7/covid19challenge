@@ -6,10 +6,15 @@
 
 {% block main %}
 
-Choose a policy to implement<br>
+Current Resources Available: <br>
+Bed Capacity: {{user['bedcap']}}<br>
+Occupied Beds: {{user['occupied']}} <br>
+Available Beds: {{(user['bedcap'] - user['occupied'])}} <br>
+Patients in Queue: {{patientcount[0]['cnt']}} <br>
 
-<br>
+<br><br>
 
+Admitted Patients:<br>
 <table class="table">
   <thead>
     <tr>
@@ -24,8 +29,7 @@ Choose a policy to implement<br>
     {% endfor %}
   </tbody>
 </table>
-
-
+Choose a policy to implement<br>
 <form action="/queue" method="post">
         Policy Name(s):
           <select name = "policyname"

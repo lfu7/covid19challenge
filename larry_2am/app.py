@@ -67,7 +67,8 @@ def welcome():
         #if resources haven't been initialized
         if user[0]['occupied'] == None or user[0]['bedcap'] == None:
             return render_template("incomplete.html")
-        return render_template("hospital.html", user=user[0])
+        patientcount = db.execute("SELECT COUNT(id) as cnt FROM patients_cond WHERE zip = :zip AND admitted=0", zip=user[0]['zip'])
+        return render_template("hospital.html", user=user[0], patientcount=patientcount)
 
 @app.route("/manage_resources", methods=["GET", "POST"])
 @login_required
@@ -109,8 +110,8 @@ def hospital_queue():
         return apology("invalid userid", 400)
     if request.method == "GET":
         ns = db.execute("SELECT DISTINCT name FROM policies WHERE hospital_id =:hid", hid=userid)
-        patientcount = db.execute("SELECT COUNT(id) FROM patients_cond WHERE zip = :zip", zip=user[0]['zip'])
-        return render_template("queue.html", names=ns, patientcount)
+        patientcount = db.execute("SELECT COUNT(id) as cnt FROM patients_cond WHERE zip = :zip AND admitted=0", zip=user[0]['zip'])
+        return render_template("queue.html", user=user[0], patientcount=patientcount, names=ns)
     else:
         policies = db.execute("SELECT * FROM policies WHERE hospital_id =:hid", hid=userid)
         age_mult = policies[0]["age_mult"]
@@ -121,17 +122,27 @@ def hospital_queue():
         ns = db.execute("SELECT DISTINCT name FROM policies WHERE hospital_id =:hid", hid=userid)
 
         #rows of patient table
-        patients = db.execute("SELECT * FROM patients_cond WHERE zip = :zip", zip=user[0]['zip'])
+        patients = db.execute("SELECT * FROM patients_cond WHERE zip = :zip AND admitted=0", zip=user[0]['zip'])
 
         candidates = simulate_helper.generate_patient_obj_list(patients, age_mult, precondition_mult, symptom_mult)
 
-        for c in candidates:
-            print(c.patient_id)
+        patientcount = db.execute("SELECT COUNT(id) as cnt FROM patients_cond WHERE zip = :zip AND admitted=0", zip=user[0]['zip'])
+        #for c in candidates:
+            #print(c.patient_id)
 
         length = len(candidates)
         #patients[0]['id']#first patient's id
 
-        return render_template("queued.html", candidates=candidates, len=length, names=ns)
+        #updating patient update information to be admitted
+        for c in candidates:
+            db.execute("UPDATE patients_cond SET admitted= 1 WHERE id = :usid",
+                    usid=c.patient_id)
+        db.execute("UPDATE hospitals SET occupied= occupied + :len WHERE id = :usid",
+                len=length, usid=userid)
+        #updating hospital summary stats
+        user = db.execute("SELECT * FROM hospitals WHERE id = :id", id=userid)
+        patientcount = db.execute("SELECT COUNT(id) as cnt FROM patients_cond WHERE zip = :zip AND admitted=0", zip=user[0]['zip'])
+        return render_template("queued.html", user=user[0], candidates=candidates, len=length, names=ns, patientcount=patientcount)
     #form tells you based on policy, what patients you should consider admitting
     #what resources they Required
     #age, troublebreathing, preexisting condition multiplier

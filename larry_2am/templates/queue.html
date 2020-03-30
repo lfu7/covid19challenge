@@ -6,11 +6,11 @@
 
 {% block main %}
 
-Current Resources Available:
+Current Resources Available:<br>
 Bed Capacity: {{user['bedcap']}}<br>
 Occupied Beds: {{user['occupied']}} <br>
 Available Beds: {{(user['bedcap'] - user['occupied'])}} <br>
-Patients in Queue: {{patientcount[0]}} <br>
+Patients in Queue: {{patientcount[0]['cnt']}} <br>
 
 Choose a policy to implement<br>
 
