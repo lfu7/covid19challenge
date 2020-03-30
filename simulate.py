@@ -50,13 +50,19 @@ def get_priority(patient_obj, age_multiplier=AGE_MULTIPLIER,
     return priority_score
 
 
-def generate_patient_obj_list(patient_df):
+def generate_patient_obj_list(patient_df, age_multiplier=AGE_MULTIPLIER,
+                 pre_existing_condition_multiplier=PRE_EXISTING_CONDITION_MULTIPLIER,
+                 high_score=HIGH_SCORE, high_score_penalty=HIGH_SCORE_PENALTY,
+                 corona_symptom_multiplier=CORONA_SYMPTOM_MULTIPLIER):
     patient_lst = []
     for index, row in patient_df.iterrows():
         current_patient = Patient(row["patient_id"], row["query_time"], row["corona_symptom"], row["covid"],
                                   row["age"],
                                   row["pre_existing_condition"], row["stay_duration"],row["location"])
-        current_patient.priority = get_priority(current_patient)
+        current_patient.priority = get_priority(current_patient, age_multiplier=AGE_MULTIPLIER,
+                 pre_existing_condition_multiplier=PRE_EXISTING_CONDITION_MULTIPLIER,
+                 high_score=HIGH_SCORE, high_score_penalty=HIGH_SCORE_PENALTY,
+                 corona_symptom_multiplier=CORONA_SYMPTOM_MULTIPLIER)
         patient_lst.append(current_patient)
     lst = sorted(patient_lst, key=lambda x: x.priority, reverse=True)
     return lst
@@ -77,7 +83,10 @@ class Hospital(object):
         self.name = name
         self.max_num_patients = max_num_patients
 
-    def simulate(self, patient_df, num_beds):
+    def simulate(self, patient_df, num_beds, age_multiplier=AGE_MULTIPLIER,
+                 pre_existing_condition_multiplier=PRE_EXISTING_CONDITION_MULTIPLIER,
+                 high_score=HIGH_SCORE, high_score_penalty=HIGH_SCORE_PENALTY,
+                 corona_symptom_multiplier=CORONA_SYMPTOM_MULTIPLIER):
 
         ### Can change this to take in some pre randomized list of patients ###
         '''
@@ -89,7 +98,10 @@ class Hospital(object):
             List of voters who voted in the precinct
         '''
 
-        patient_list = generate_patient_obj_list(patient_df)
+        patient_list = generate_patient_obj_list(patient_df, age_multiplier=AGE_MULTIPLIER,
+                 pre_existing_condition_multiplier=PRE_EXISTING_CONDITION_MULTIPLIER,
+                 high_score=HIGH_SCORE, high_score_penalty=HIGH_SCORE_PENALTY,
+                 corona_symptom_multiplier=CORONA_SYMPTOM_MULTIPLIER)
         final_patient_list = []
 
         # Initialize default base voter (not the first voter!)
@@ -171,7 +183,7 @@ class Bed(object):
         return self._bed_queue.full()
 
 
-def find_avg_wait_time(hospital_object, df, num_beds, ntrials):
+def find_avg_wait_time(hospital_object, df, num_beds):
     '''
     Simulates a precinct multiple times with a given number of booths
     For each simulation, computes the average waiting time of the voters,
@@ -192,22 +204,18 @@ def find_avg_wait_time(hospital_object, df, num_beds, ntrials):
     ### Need to get hospital data from the US list ###
 
     # Accumulate list of trial averages.
-    trial_averages = []
-    for trial in range(ntrials):
-        final_patient_list = hospital_object.simulate(df, num_beds)
-        average_one_trial = sum([(v.start_time - v.query_time) for v in final_patient_list]) / len(final_patient_list)
-        trial_averages.append(average_one_trial)
+
+    final_patient_list = hospital_object.simulate(df, num_beds)
+    average_one_trial = sum([(v.start_time - v.query_time) for v in final_patient_list]) / len(final_patient_list)
 
         # Increments seed in random.seed() used in simulate method
         # of Precinct class
 
-    trial_averages = sorted(trial_averages)
 
-    return trial_averages[ntrials // 2]  # Median trial average
+    return average_one_trial  # Median trial average
 
 
-def find_number_of_beds(hospital, df, target_wait_time, max_num_beds,
-                          ntrials):
+def find_number_of_beds(hospital, df, target_wait_time, max_num_beds):
     '''
     Finds the number of booths a precinct needs to guarantee a bounded
     (average) waiting time.
@@ -230,13 +238,13 @@ def find_number_of_beds(hospital, df, target_wait_time, max_num_beds,
     ### Can use this to find the optimal number of beds for different hospitals ###
 
     for num_beds in range(1, max_num_beds + 1):
-        avg_wait_time = find_avg_wait_time(hospital, df, num_beds, ntrials)
+        avg_wait_time = find_avg_wait_time(hospital, df, num_beds)
         if avg_wait_time <= target_wait_time:
             return (num_beds, avg_wait_time)
 
     return (0, None)
 
-
+'''
 header_list = ["patient_id", "query_time", "corona_symptom", "covid", "age", "pre_existing_condition",\
 "stay_duration","location"]
 df = pd.read_csv("trial_priority_data.csv", names=header_list)
@@ -245,6 +253,67 @@ shitty_hospital = Hospital('Borja', 100)
 print('priority', "query_time", 'start time', 'stay_duration','departure_time')
 for i in shitty_hospital.simulate(df,2):
     print(i.priority, i.query_time, i.start_time, i.stay_duration, i.departure_time)
+'''
+def master_function(patient_df, hospital_id, num_beds_in_hospital, num_beds_for_sim, target_wait_time, max_num_beds,
+    age_multiplier=AGE_MULTIPLIER, pre_existing_condition_multiplier=PRE_EXISTING_CONDITION_MULTIPLIER,
+    high_score=HIGH_SCORE, high_score_penalty=HIGH_SCORE_PENALTY, 
+    corona_symptom_multiplier=CORONA_SYMPTOM_MULTIPLIER):
+
+    '''
+    Master function that combines all previous functions and gives all outputs that are needed for web app usage
+    Inputs:
+      patient_df: dataframe that contains patient information from questionaire
+      hospital_id: name of hospital
+      num_beds_in_hospital: total number of beds in a hospital
+      num_beds_for_sim: number of beds in a hospital that should be used in simulation of coronavirus patient wait times
+      target_awit_time: wait time desired by hospital input for find_number_of_beds
+      max_num_beds: maximum possible number of beds that are to be used in find_number_of_beds function
+      multipliers: inputs for getting patient score
+    Outputs:
+      patient_final_df: dataframe containing information on patient wait time, stay duration, priority number
+      avg_wait_time: average wait time for a given hospital, given a number of beds
+      find_number_of_beds: number of beds needed to reach an ideal wait time
+    '''
+
+    hospital = Hospital(hospital_id, num_beds_in_hospital)
+    patient_df.columns = ["patient_id", "query_time", "corona_symptom", "covid", "age", "pre_existing_condition",\
+    "stay_duration","location"]
+
+    final_header_list = ["patient_id", "priority", "query_time", "start_time", "stay_duration", "departure_time"]
+    patient_list = hospital.simulate(df, num_beds_for_sim, age_multiplier=AGE_MULTIPLIER,
+                 pre_existing_condition_multiplier=PRE_EXISTING_CONDITION_MULTIPLIER,
+                 high_score=HIGH_SCORE, high_score_penalty=HIGH_SCORE_PENALTY,
+                 corona_symptom_multiplier=CORONA_SYMPTOM_MULTIPLIER)
+    patient_attribute_list = []
+    for i in patient_list:
+        patient_attribute_list.append([i.patient_id, i.priority, i.query_time, i.start_time, i.stay_duration, i.departure_time])    
+    patient_final_df = pd.DataFrame(patient_attribute_list, columns = final_header_list)
+    avg_wait_time = find_avg_wait_time(hospital, patient_df, num_beds_for_sim)
+    ideal_num_beds = find_number_of_beds(hospital, patient_df, target_wait_time, max_num_beds)
+
+    return patient_final_df, avg_wait_time, ideal_num_beds
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

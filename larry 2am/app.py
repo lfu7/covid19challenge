@@ -1,4 +1,5 @@
 import os
+import simulate_helper
 import time
 from cs50 import SQL
 from flask import Flask, flash, jsonify, redirect, render_template, request, session
@@ -110,12 +111,26 @@ def hospital_queue():
         ns = db.execute("SELECT DISTINCT name FROM policies WHERE hospital_id =:hid", hid=userid)
         return render_template("queue.html", names=ns)
     else:
+        policies = db.execute("SELECT * FROM policies WHERE hospital_id =:hid", hid=userid)
+        age_mult = policies[0]["age_mult"]
+        precondition_mult = policies[0]["precondition_mult"]
+        symptom_mult = policies[0]["symptom_mult"]
+
+        
         ns = db.execute("SELECT DISTINCT name FROM policies WHERE hospital_id =:hid", hid=userid)
+        
         #rows of patient table
-        patients = db.execute("SELECT * FROM patients WHERE zip = :zip", zip=user[0]['zipcode'])
+        patients = db.execute("SELECT * FROM patients_cond WHERE zip = :zip", zip=user[0]['zip'])
+        
+        candidates = simulate_helper.generate_patient_obj_list(patients, age_mult, precondition_mult, symptom_mult)
+        
+        for c in candidates:
+            print(c.patient_id)
+
+        length = len(candidates)
         #patients[0]['id']#first patient's id
-        candidates = patients #queuefunction(patients)
-        return render_template("queued.html", candidates=patients, names=ns)
+        
+        return render_template("queued.html", candidates=candidates, len=length, names=ns)
     #form tells you based on policy, what patients you should consider admitting
     #what resources they Required
     #age, troublebreathing, preexisting condition multiplier
@@ -254,7 +269,7 @@ def register():
             un=request.form.get("username"), h=generate_password_hash(password), zip=request.form.get("zip"))
 
         else: #hospital
-            db.execute("INSERT INTO hospitals (username, hash, zipcode) VALUES(:un, :h, :zip)",
+            db.execute("INSERT INTO hospitals (username, hash, zip) VALUES(:un, :h, :zip)",
             un=request.form.get("username"), h=generate_password_hash(password), zip=request.form.get("zip"))
 
         return redirect("/")
@@ -426,13 +441,12 @@ def form():
         rows = db.execute("SELECT * FROM patients WHERE id = :id",
                        id=userid)
 
-        print(rows);
-        print(rows[0]["age"])
+        age = rows[0]["age"]
+        zip = rows[0]["zip"]
 
 
-
-        #db.execute("INSERT INTO patients_cond (id, query_time, symptoms, covid, age, conditions,zip) VALUES(:id, :qt, :symptoms, 0, :age, :cond, :zip)",
-        #    id=userid, qt=queryTime, symptoms=symptoms, zip)
+        db.execute("INSERT INTO patients_cond (id, query_time, symptoms, covid, age, conditions,zip) VALUES(:id, :qt, :symptoms, 0, :age, :cond, :zip)",
+            id=userid, qt=queryTime, symptoms=symptoms, age=age, cond=conditions, zip=zip)
 
 
 
