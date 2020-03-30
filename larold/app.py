@@ -48,7 +48,7 @@ db = SQL("sqlite:///hospitals.db")
 def welcome():
     userid=session["user_id"]
     accounttype=session["account_type"]
-
+    #patient
     if (accounttype==0):
         user = db.execute("SELECT * FROM patients WHERE id = :id", id=userid)
         # Ensure id exists
@@ -57,25 +57,45 @@ def welcome():
 
         return render_template("patient.html", user=user[0])
 
-
+    #hospital
     elif (accounttype==1):
         user = db.execute("SELECT * FROM hospitals WHERE id = :id", id=userid)
         # Ensure id exists
         if len(user) != 1:
             return apology("invalid userid", 400)
-
+        #if resources haven't been initialized
+        if user[0]['occupied'] == None or user[0]['bedcap'] == None:
+            return render_template("incomplete.html")
         return render_template("hospital.html", user=user[0])
 
 @app.route("/manage_resources", methods=["GET", "POST"])
 @login_required
-def hospital_resources():
+def manage_resources():
     userid=session["user_id"]
     user = db.execute("SELECT * FROM hospitals WHERE id = :id", id=userid)
-    # Ensure id exists
     if len(user) != 1:
         return apology("invalid userid", 400)
     if request.method == "GET":
-        return render_template("resources.html", user=user[0])
+        # Ensure id exists
+        if request.method == "GET":
+            return render_template("resources.html", user=user[0])
+    #post
+    else:
+        bedcap = request.form.get("bedcap")
+        occupied = request.form.get("occupied")
+        #update query with updated stuff
+        if bedcap and occupied:
+            db.execute("UPDATE hospitals SET bedcap = :bedcap, occupied= :occupied WHERE id =:id",
+                bedcap=bedcap, occupied=occupied, id=user[0]['id'])
+        else:
+            if bedcap:
+                db.execute("UPDATE hospitals SET bedcap = :bedcap WHERE id =:id",
+                    bedcap=bedcap, id=user[0]['id'])
+            if occupied:
+                db.execute("UPDATE hospitals SET occupied = :occupied WHERE id =:id",
+                    occupied=occupied, id=user[0]['id'])
+    return redirect("/")
+
     #input/initialize what resources you have
     #display resources in resources.html (beds whatever)
 
@@ -83,10 +103,10 @@ def hospital_resources():
 @login_required
 def hospital_queue():
     if request.method == "GET":
-        return render_template("resources.html")
+        return render_template("queue.html")
     #form tells you based on policy, what patients you should consider admitting
     #what resources they Required
-
+    #age, troublebreathing, preexisting condition multiplier
     #if you do admit, you can update hospital_resources what resources you allocated (talk to db)
 
 @app.route("/decision_policy", methods=["GET", "POST"])
@@ -202,7 +222,7 @@ def register():
             db.execute("INSERT INTO patients (username, hash) VALUES(:un, :h)",
             un=request.form.get("username"), h=generate_password_hash(password))
 
-        else:
+        else: #hospital
             db.execute("INSERT INTO hospitals (username, hash) VALUES(:un, :h)",
             un=request.form.get("username"), h=generate_password_hash(password))
 
