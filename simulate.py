@@ -122,7 +122,6 @@ class Hospital(object):
         all_beds = Bed(queue.PriorityQueue(num_beds))
 
         for patient_index in range(min(len(patient_list), self.max_num_patients)):
-            print(self.max_num_patients)
             new_patient = patient_list[patient_index]
 
             # When booths are full
@@ -130,9 +129,11 @@ class Hospital(object):
                 # min_departure_time is the earliest departure time among
                 # all people currently in all_beds
                 min_departure_time = all_beds.get_remove_patient_dep()
-                current_time = min_departure_time
-
-            new_patient.start_time = current_time
+                current_time += min_departure_time
+            if current_time <= new_patient.query_time:
+                new_patient.start_time = new_patient.query_time
+            else:
+                new_patient.start_time = current_time
             new_patient.stay_duration = self.generate_stay_duration()
             new_patient.departure_time = new_patient.start_time + new_patient.stay_duration
 
@@ -140,6 +141,11 @@ class Hospital(object):
             final_patient_list.append(new_patient)
 
         return final_patient_list
+
+def get_patient_info(final_patient_list, patient_id):
+    for patient in final_patient_list:
+        if patient.patient_id == patient_id:
+            return patient
 
 
 
@@ -190,7 +196,7 @@ class Bed(object):
         return self._bed_queue.full()
 
 
-def find_avg_wait_time(hospital, num_beds, ntrials, initial_seed=0):
+def find_avg_wait_time(hospital_object, df, num_beds, ntrials, initial_seed=0):
     '''
     Simulates a precinct multiple times with a given number of booths
     For each simulation, computes the average waiting time of the voters,
@@ -209,16 +215,12 @@ def find_avg_wait_time(hospital, num_beds, ntrials, initial_seed=0):
     # object
 
     ### Need to get hospital data from the US list ###
-    hospital_object = Hospital(hospital["name"], hospital["hours_open"],
-                               hospital["num_patients"], hospital["voter_distribution"]["arrival_rate"],
-                               hospital["voter_distribution"]["stay_duration_rate"])
 
     # Accumulate list of trial averages.
     trial_averages = []
     for trial in range(ntrials):
-        patient_list = hospital_object.simulate(initial_seed, num_beds)
-        average_one_trial = sum([v.start_time - \
-                                 v.arrival_time for v in patient_list]) / len(patient_list)
+        final_patient_list = hospital_object.simulate(initial_seed, df, num_beds)
+        average_one_trial = sum([v.start_time - v.query_time for v in final_patient_list]) / len(final_patient_list)
         trial_averages.append(average_one_trial)
 
         # Increments seed in random.seed() used in simulate method
@@ -230,7 +232,7 @@ def find_avg_wait_time(hospital, num_beds, ntrials, initial_seed=0):
     return trial_averages[ntrials // 2]  # Median trial average
 
 
-def find_number_of_booths(hospital, target_wait_time, max_num_beds,
+def find_number_of_beds(hospital, df, target_wait_time, max_num_beds,
                           ntrials, seed=0):
     '''
     Finds the number of booths a precinct needs to guarantee a bounded
@@ -254,8 +256,7 @@ def find_number_of_booths(hospital, target_wait_time, max_num_beds,
     ### Can use this to find the optimal number of beds for different hospitals ###
 
     for num_beds in range(1, max_num_beds + 1):
-        avg_wait_time = find_avg_wait_time(hospital, num_beds, ntrials,
-                                           seed)
+        avg_wait_time = find_avg_wait_time(hospital, df, num_beds, ntrials, seed)
         if avg_wait_time < target_wait_time:
             return (num_beds, avg_wait_time)
 

@@ -1,11 +1,21 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Resources
+    Updating Information Needed
 {% endblock %}
 
 {% block main %}
-Total Value: {{'%d' % (user['cash'] + stonk_sum)|float}}<br>
-Cash: {{'%d' % user['cash']|float}} <br>
-Stocks: {{'%df' % stonk_sum|float}}
+
+Please Update the Following Fields:
+  <form action="/manage_resources" method="post">
+      <div class="form-group">
+          <input autocomplete="off" autofocus class="form-control" name="bedcap" placeholder="Total Number of Beds"
+          type="number" min="0" step="1">
+      </div>
+      <div class="form-group">
+          <input class="form-control" name="occupied" placeholder="Beds Occupied"
+          type="number" min="0" step="1">
+      </div>
+      <button class="btn btn-primary" type="submit">Update</button>
+  </form>
 {% endblock %}
