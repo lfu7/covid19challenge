@@ -111,13 +111,17 @@ def hospital_queue():
     if request.method == "GET":
         ns = db.execute("SELECT DISTINCT name FROM policies WHERE hospital_id =:hid", hid=userid)
         patientcount = db.execute("SELECT COUNT(id) as cnt FROM patients_cond WHERE zip = :zip AND admitted=0", zip=user[0]['zip'])
-        return render_template("queue.html", user=user[0], patientcount=patientcount, names=ns)
+        max = min(patientcount[0]['cnt'], user[0]['bedcap'] - user[0]['occupied'])
+        return render_template("queue.html", user=user[0], patientcount=patientcount, names=ns, max=max)
     else:
         policies = db.execute("SELECT * FROM policies WHERE hospital_id =:hid", hid=userid)
         age_mult = policies[0]["age_mult"]
         precondition_mult = policies[0]["precondition_mult"]
         symptom_mult = policies[0]["symptom_mult"]
 
+        admitlen = request.form.get("admitlen")
+        if not admitlen:
+            return apology("must provide number to admit", 403)
 
         ns = db.execute("SELECT DISTINCT name FROM policies WHERE hospital_id =:hid", hid=userid)
 
@@ -125,8 +129,7 @@ def hospital_queue():
         patients = db.execute("SELECT * FROM patients_cond WHERE zip = :zip AND admitted=0", zip=user[0]['zip'])
 
         candidates = simulate_helper.generate_patient_obj_list(patients, age_mult, precondition_mult, symptom_mult)
-
-        patientcount = db.execute("SELECT COUNT(id) as cnt FROM patients_cond WHERE zip = :zip AND admitted=0", zip=user[0]['zip'])
+        candidates = candidates[:admitlen]
         #for c in candidates:
             #print(c.patient_id)
 
@@ -142,7 +145,9 @@ def hospital_queue():
         #updating hospital summary stats
         user = db.execute("SELECT * FROM hospitals WHERE id = :id", id=userid)
         patientcount = db.execute("SELECT COUNT(id) as cnt FROM patients_cond WHERE zip = :zip AND admitted=0", zip=user[0]['zip'])
-        return render_template("queued.html", user=user[0], candidates=candidates, len=length, names=ns, patientcount=patientcount)
+        max = min(patientcount[0]['cnt'], user[0]['bedcap'] - user[0]['occupied'])
+        return render_template("queued.html", user=user[0], candidates=candidates,
+            len=length, names=ns, patientcount=patientcount, max=max)
     #form tells you based on policy, what patients you should consider admitting
     #what resources they Required
     #age, troublebreathing, preexisting condition multiplier
