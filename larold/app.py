@@ -1,5 +1,5 @@
 import os
-import time
+
 from cs50 import SQL
 from flask import Flask, flash, jsonify, redirect, render_template, request, session
 from flask_session import Session
@@ -237,7 +237,7 @@ def register():
         password = request.form.get("password")
         if not password:
             return apology("must provide password", 400)
-            #
+
         # Ensure password was confirmed
         confirmation = request.form.get("confirmation")
         if not confirmation or (confirmation != password):
@@ -270,11 +270,6 @@ def register():
 def form():
     userid=session["user_id"]
     if request.method=="POST":
-        
-        symptoms=0;
-        conditions=0;
-        print(request.form.get("symptom1"))
-
         # Ensure username was submitted
         if not request.form.get("name"):
             return apology("must provide name", 400)
@@ -298,142 +293,66 @@ def form():
 
         #symptoms
         if (request.form.get("symptom1")=="Fevers"):
-            symptoms=1;
             db.execute("UPDATE patients SET fever= 1 WHERE id = :usid",
-                       usid=userid)
-        else:
-            db.execute("UPDATE patients SET fever= 0 WHERE id = :usid",
                        usid=userid)
 
         if (request.form.get("symptom2")=="Breathing"):
-            symptoms=1;
             db.execute("UPDATE patients SET breathing= 1 WHERE id = :usid",
-                       usid=userid)
-        else:
-            db.execute("UPDATE patients SET breathing= 0 WHERE id = :usid",
                        usid=userid)
 
         if (request.form.get("symptom3")=="Cough"):
-            symptoms=1;
             db.execute("UPDATE patients SET cough= 1 WHERE id = :usid",
-                       usid=userid)
-        else:
-            db.execute("UPDATE patients SET cough= 0 WHERE id = :usid",
                        usid=userid)
 
         if (request.form.get("symptom4")=="Sore_Throat"):
-            symptoms=1;
             db.execute("UPDATE patients SET sore_throat= 1 WHERE id = :usid",
-                       usid=userid)
-        else:
-            db.execute("UPDATE patients SET sore_throat= 0 WHERE id = :usid",
                        usid=userid)
 
         if (request.form.get("symptom5")=="Aching"):
-            symptoms=1;
             db.execute("UPDATE patients SET aching= 1 WHERE id = :usid",
-                       usid=userid)
-        else:
-            db.execute("UPDATE patients SET aching= 0 WHERE id = :usid",
                        usid=userid)
 
         if (request.form.get("symptom6")=="Nausea"):
-            symptoms=1;
             db.execute("UPDATE patients SET nausea= 1 WHERE id = :usid",
-                       usid=userid)
-        else:
-            db.execute("UPDATE patients SET nausea= 0 WHERE id = :usid",
                        usid=userid)
 
         #conditions
         if (request.form.get("condition1")=="Asthma"):
-            conditions=1;
             db.execute("UPDATE patients SET asthma= 1 WHERE id = :usid",
-                       usid=userid)
-        else:
-            db.execute("UPDATE patients SET asthma= 0 WHERE id = :usid",
                        usid=userid)
 
         if (request.form.get("condition2")=="Pregnancy"):
-            conditions=1;
             db.execute("UPDATE patients SET pregnancy= 1 WHERE id = :usid",
-                       usid=userid)
-        else:
-            db.execute("UPDATE patients SET asthma= 0 WHERE id = :usid",
                        usid=userid)
 
         if (request.form.get("condition3")=="WeakenedIS"):
-            conditions=1;
             db.execute("UPDATE patients SET weakened_is= 1 WHERE id = :usid",
                        usid=userid)
-        else:
-            db.execute("UPDATE patients SET weakened_is= 0 WHERE id = :usid",
-                       usid=userid)
 
-        if (request.form.get("condition4")=="Diabetesc"):
-            conditions=1;
+        if (request.form.get("condition4")=="Diabetes"):
             db.execute("UPDATE patients SET diabetes= 1 WHERE id = :usid",
-                       usid=userid)
-        else:
-            db.execute("UPDATE patients SET diabetes= 0 WHERE id = :usid",
                        usid=userid)
 
         if (request.form.get("condition5")=="Kidney"):
-            conditions=1;
             db.execute("UPDATE patients SET kidney= 1 WHERE id = :usid",
-                       usid=userid)
-        else:
-            db.execute("UPDATE patients SET kidney= 0 WHERE id = :usid",
                        usid=userid)
 
         if (request.form.get("condition6")=="Obesity"):
-            conditions=1;
             db.execute("UPDATE patients SET obesity= 1 WHERE id = :usid",
                        usid=userid)
-        else:
-            db.execute("UPDATE patients SET obesity= 0 WHERE id = :usid",
-                       usid=userid)
-
 
         #exposure
         if (request.form.get("exposure1")=="International"):
             db.execute("UPDATE patients SET international= 1 WHERE id = :usid",
                        usid=userid)
-        else:
-            db.execute("UPDATE patients SET international= 0 WHERE id = :usid",
-                       usid=userid)
 
         if (request.form.get("exposure2")=="Residence"):
             db.execute("UPDATE patients SET residence= 1 WHERE id = :usid",
-                       usid=userid)
-        else:
-            db.execute("UPDATE patients SET residence= 0 WHERE id = :usid",
                        usid=userid)
 
         if (request.form.get("exposure3")=="Contact"):
             db.execute("UPDATE patients SET contact= 1 WHERE id = :usid",
                        usid=userid)
-        else:
-            db.execute("UPDATE patients SET contact= 0 WHERE id = :usid",
-                       usid=userid)
-
-
-
-
-        #reads into patients_cond
-
-        queryTime = int(time.time()/86400)
-        rows = db.execute("SELECT * FROM patients WHERE id = :id",
-                       id=userid)
-
-        print(rows);
-        print(rows[0]["age"])
-
-
-
-        #db.execute("INSERT INTO patients_cond (id, query_time, symptoms, covid, age, conditions,zip) VALUES(:id, :qt, :symptoms, 0, :age, :cond, :zip)",
-        #    id=userid, qt=queryTime, symptoms=symptoms, zip)
-
 
 
         return redirect("/")

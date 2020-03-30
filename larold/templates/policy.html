@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Adding Custom Policy
+{% endblock %}
+
+{% block main %}
+
+Add a Custom Policy Below <br>
+<br>
+<form action="/decision_policy" method="post">
+        <div class="form-group">
+            <input autocomplete="off" autofocus class="form-control input-lg" name="policyname" placeholder="Name of Policy" type="text">
+        </div>
+        <div class="form-group">
+            <input autocomplete="off" autofocus class="form-control input-lg" name="age_mult"
+              placeholder="Age Multiplier Here" type="number">
+            <input autocomplete="off" autofocus class="form-control input-lg" name="symptom_mult"
+              placeholder="Symptom Multiplier Here" type="number">
+            <input autocomplete="off" autofocus class="form-control input-lg" name="precondition_mult"
+              placeholder="Pre-existing Condtion Multiplier Here" type="number">
+        </div>
+        <button class="btn btn-primary" type="submit">Add Policy</button>
+</form>
+{% endblock %}
