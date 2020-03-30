@@ -116,20 +116,20 @@ def hospital_queue():
         precondition_mult = policies[0]["precondition_mult"]
         symptom_mult = policies[0]["symptom_mult"]
 
-        
+
         ns = db.execute("SELECT DISTINCT name FROM policies WHERE hospital_id =:hid", hid=userid)
-        
+
         #rows of patient table
         patients = db.execute("SELECT * FROM patients_cond WHERE zip = :zip", zip=user[0]['zip'])
-        
+
         candidates = simulate_helper.generate_patient_obj_list(patients, age_mult, precondition_mult, symptom_mult)
-        
+
         for c in candidates:
             print(c.patient_id)
 
         length = len(candidates)
         #patients[0]['id']#first patient's id
-        
+
         return render_template("queued.html", candidates=candidates, len=length, names=ns)
     #form tells you based on policy, what patients you should consider admitting
     #what resources they Required
@@ -285,7 +285,7 @@ def register():
 def form():
     userid=session["user_id"]
     if request.method=="POST":
-        
+
         symptoms=0;
         conditions=0;
         print(request.form.get("symptom1"))
