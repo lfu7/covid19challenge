@@ -1,0 +1,85 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+    <form action="/request_visit" method="post">
+        <div class="form-group">
+            <input autocomplete="off" autofocus class="form-control" name="name"
+                placeholder="Name" type="text" id ="name">
+        </div>
+        <div class="form-group">
+            <input class="form-control" name="age" placeholder="Age" type="int">
+        </div>
+
+	<br>
+
+	<div id="wrapper">
+	  <h3>Do you have any of these symptoms?</h3><br>
+	  <input type="checkbox" name="symptom1" value="Fevers">
+	  <label for="symptom1"> Fevers, chills, or sweating</label><br>
+	  <input type="checkbox" name="symptom2" value="Breathing">
+	  <label for="symptom2"> Difficulty Breathing</label><br>
+	  <input type="checkbox" name="symptom3" value="Cough">
+	  <label for="symptom3"> New or Worsening Cough</label><br>
+	  <input type="checkbox" name="symptom4" value="Sore_Throat">
+          <label for="symptom4"> Sore Throat</label><br>
+	  <input type="checkbox" name="symptom5" value="Aching">
+          <label for="symptom5"> Aching Throughout Body</label><br>
+	  <input type="checkbox" name="symptom6" value="Nausea">
+          <label for="symptom6"> Vomiting and Diarrhea</label><br>
+
+
+	</div>
+	<br>
+	<br>
+	<div id="wrapper">
+	  <h3>Do you have any of these conditions?</h3><br>
+          <input type="checkbox" name="condition1" value="Asthma">
+          <label for="condition1"> Asthma </label><br>
+          <input type="checkbox" name="condition2" value="Pregnancy">
+          <label for="condition2"> Pregnancy </label><br>
+          <input type="checkbox" name="condition3" value="WeakenedIS">
+          <label for="condition3"> Weakend Immune System</label><br>
+          <input type="checkbox" name="condition4" value="Diabetes">
+          <label for="condition4"> Diabetes </label><br>
+          <input type="checkbox" name="condition5" value="Kidney">
+          <label for="condition5"> Kidney Failure</label><br>
+          <input type="checkbox" name="condition6" value="Obesity">
+          <label for="condition6"> Morbid Obesity</label><br>
+
+        </div>
+	<br>
+	<br>
+
+	<div id="wrapper">
+	  <h3>Have you had any exposure to COVID-19?</h3><br>
+          <input type="checkbox" name="exposure1" value="International">
+          <label for="exposure1"> Travelled internationally in the last 14 days </label><br>
+          <input type="checkbox" name="exposure2" value="Residence">
+          <label for="exposure2"> Live in an area where COVID-19 is widespread </label><br>
+          <input type="checkbox" name="exposure3" value="Contact">
+          <label for="exposure3"> Close contact with someone who has COVID-19 </label><br>
+
+        </div>
+
+
+	<br>
+	<br>
+	<br>
+	<button class="btn btn-primary" type="submit" id="mySubmit">Submit</button>
+
+    </form>
+
+    <script>
+        $('document').ready(function(){
+            let mySubmit = document.getElementById('mySubmit');
+            mySubmit.onclick = function(event) {
+                event.preventDefault();
+                mySubmit.submit();
+            };
+        });
+    </script>
+{% endblock %}
