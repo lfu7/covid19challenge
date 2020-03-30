@@ -63,7 +63,7 @@ def welcome():
         # Ensure id exists
         if len(user) != 1:
             return apology("invalid userid", 400)
-
+        #if resources haven't been initialized
         if user[0]['occupied'] == None or user[0]['bedcap'] == None:
             return render_template("incomplete.html")
         return render_template("hospital.html", user=user[0])
@@ -73,20 +73,28 @@ def welcome():
 def manage_resources():
     userid=session["user_id"]
     user = db.execute("SELECT * FROM hospitals WHERE id = :id", id=userid)
+    if len(user) != 1:
+        return apology("invalid userid", 400)
     if request.method == "GET":
         # Ensure id exists
-        if len(user) != 1:
-            return apology("invalid userid", 400)
         if request.method == "GET":
             return render_template("resources.html", user=user[0])
+    #post
     else:
-        if request.form.get("bedcap"):
-            bedcap = request.form.get("bedcap");
-        if request.form.get("occupied"):
-            occupied = request.form.get("occupied")
+        bedcap = request.form.get("bedcap")
+        occupied = request.form.get("occupied")
         #update query with updated stuff
-        db.execute("UPDATE Customers SET ContactName = 'Alfred Schmidt', City= 'Frankfurt'
-        WHERE CustomerID = 1")
+        if bedcap and occupied:
+            db.execute("UPDATE hospitals SET bedcap = :bedcap, occupied= :occupied WHERE id =:id",
+                bedcap=bedcap, occupied=occupied, id=user[0]['id'])
+        else:
+            if bedcap:
+                db.execute("UPDATE hospitals SET bedcap = :bedcap WHERE id =:id",
+                    bedcap=bedcap, id=user[0]['id'])
+            if occupied:
+                db.execute("UPDATE hospitals SET occupied = :occupied WHERE id =:id",
+                    occupied=occupied, id=user[0]['id'])
+    return redirect("/")
 
     #input/initialize what resources you have
     #display resources in resources.html (beds whatever)
