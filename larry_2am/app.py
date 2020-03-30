@@ -7,7 +7,7 @@ from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
-
+from random import randint
 from helpers import apology, login_required, lookup, usd
 
 #API_KEY
@@ -129,7 +129,7 @@ def hospital_queue():
         patients = db.execute("SELECT * FROM patients_cond WHERE zip = :zip AND admitted=0", zip=user[0]['zip'])
 
         candidates = simulate_helper.generate_patient_obj_list(patients, age_mult, precondition_mult, symptom_mult)
-        candidates = candidates[:admitlen]
+        candidates = candidates[:int(admitlen)]
         #for c in candidates:
             #print(c.patient_id)
 
@@ -472,7 +472,17 @@ def form():
     else:
         return render_template("request_visit.html")
 
-
+@app.route("/testgen", methods=["GET"])
+@login_required
+def testgen():
+    for x in range(0, 100):
+        db.execute("INSERT INTO patients (username, hash, zip) VALUES(:un, :h, :zip)",
+            un="jhu"+str(x), h=generate_password_hash("password"), zip=21287)
+        queryTime = int(time.time()/86400)
+        db.execute('''INSERT INTO patients_cond (id, query_time, symptoms, covid, age, conditions,zip)
+            VALUES(:id, :qt, :symptoms, 0, :age, :cond, :zip)''',
+            id=1+x, qt=queryTime, symptoms=randint(0,1), age=randint(15, 90), cond=randint(0,1), zip=21287)
+    return redirect("/")
 
 
 def errorhandler(e):

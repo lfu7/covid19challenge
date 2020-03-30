@@ -38,6 +38,7 @@
 			    <li class="nav-item"><a class="nav-link" href="/manage_resources">Resources</a></li>
 			    <li class="nav-item"><a class="nav-link" href="/decision_policy">Decision Policy</a></li>
 			    <li class="nav-item"><a class="nav-link" href="/queue">Queue</a></li>
+          <li class="nav-item"><a class="nav-link" href="/testgen">Gen(Testing)</a></li>
 		    {% endif %}
 
                     <ul class="navbar-nav ml-auto mt-2">
