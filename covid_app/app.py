@@ -112,6 +112,7 @@ def hospital_queue():
     else:
         ns = db.execute("SELECT DISTINCT name FROM policies WHERE hospital_id =:hid", hid=userid)
         #rows of patient table
+        #abbreviated patients? 
         patients = db.execute("SELECT * FROM patients WHERE zip = :zip", zip=user[0]['zipcode'])
         #patients[0]['id']#first patient's id
         candidates = patients #queuefunction(patients)
