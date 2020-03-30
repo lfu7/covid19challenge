@@ -114,6 +114,8 @@ def hospital_queue():
 def hospital_policy():
     if request.method == "GET":
         return render_template("policy.html")
+    else:
+        update policy
         #render form
     #form where you can toggle policy
     #have some arbitrary number scoring system
