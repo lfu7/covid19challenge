@@ -94,7 +94,7 @@ def manage_resources():
             if occupied:
                 db.execute("UPDATE hospitals SET occupied = :occupied WHERE id =:id",
                     occupied=occupied, id=user[0]['id'])
-    return redirect("/")
+        return redirect("/")
 
     #input/initialize what resources you have
     #display resources in resources.html (beds whatever)
@@ -102,8 +102,16 @@ def manage_resources():
 @app.route("/queue", methods=["GET", "POST"])
 @login_required
 def hospital_queue():
+    userid=session["user_id"]
+    user = db.execute("SELECT * FROM hospitals WHERE id = :id", id=userid)
+    if len(user) != 1:
+        return apology("invalid userid", 400)
     if request.method == "GET":
-        return render_template("queue.html")
+        ns = db.execute("SELECT DISTINCT name FROM policies WHERE hospital_id =:hid", hid=userid)
+        return render_template("queue.html", names=ns)
+    else:
+        db.execute("SELECT * FROM patients WHERE id = :id", id=userid)
+        return render_template("queued.html")
     #form tells you based on policy, what patients you should consider admitting
     #what resources they Required
     #age, troublebreathing, preexisting condition multiplier
@@ -112,19 +120,35 @@ def hospital_queue():
 @app.route("/decision_policy", methods=["GET", "POST"])
 @login_required
 def hospital_policy():
+    userid=session["user_id"]
+    user = db.execute("SELECT * FROM hospitals WHERE id = :id", id=userid)
+    if len(user) != 1:
+        return apology("invalid userid", 400)
     if request.method == "GET":
+        #render form
+        #form where you can toggle policy
+        #have some arbitrary number scoring system
+        #what you prioritize or whatnot (age, risk, symptoms, covid/non-covid)
+        #also have premade algorithm
         return render_template("policy.html")
     else:
-        update policy
-        #render form
-    #form where you can toggle policy
-    #have some arbitrary number scoring system
-    #what you prioritize or whatnot (age, risk, symptoms, covid/non-covid)
-    #also have premade algorithm
-    #else:
-        #submit/update policy info for hospital
-
-
+        #update policy
+        name = request.form.get("policyname")
+        am = request.form.get("age_mult")
+        sm = request.form.get("symptom_mult")
+        pm = request.form.get("precondition_mult")
+        if not name:
+            return apology("must provide policyname", 403)
+        if not am:
+            return apology("must provide age_mult", 403)
+        if not sm:
+            return apology("must provide symptom_mult", 403)
+        if not pm:
+            return apology("must provide precondition_mult", 403)
+        db.execute('''INSERT INTO policies (hospital_id, age_mult, symptom_mult,
+            precondition_mult, name) VALUES(:hid, :am, :sm, :pm, :name)''',
+            hid=userid, am=am, sm=sm, pm=pm, name=name)
+        return redirect("/queue")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
