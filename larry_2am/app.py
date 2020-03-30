@@ -7,7 +7,7 @@ from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
-
+from random import randint
 from helpers import apology, login_required, lookup, usd
 
 #API_KEY
@@ -67,7 +67,8 @@ def welcome():
         #if resources haven't been initialized
         if user[0]['occupied'] == None or user[0]['bedcap'] == None:
             return render_template("incomplete.html")
-        return render_template("hospital.html", user=user[0])
+        patientcount = db.execute("SELECT COUNT(id) as cnt FROM patients_cond WHERE zip = :zip AND admitted=0", zip=user[0]['zip'])
+        return render_template("hospital.html", user=user[0], patientcount=patientcount)
 
 @app.route("/manage_resources", methods=["GET", "POST"])
 @login_required
@@ -109,28 +110,44 @@ def hospital_queue():
         return apology("invalid userid", 400)
     if request.method == "GET":
         ns = db.execute("SELECT DISTINCT name FROM policies WHERE hospital_id =:hid", hid=userid)
-        return render_template("queue.html", names=ns)
+        patientcount = db.execute("SELECT COUNT(id) as cnt FROM patients_cond WHERE zip = :zip AND admitted=0", zip=user[0]['zip'])
+        max = min(patientcount[0]['cnt'], user[0]['bedcap'] - user[0]['occupied'])
+        return render_template("queue.html", user=user[0], patientcount=patientcount, names=ns, max=max)
     else:
         policies = db.execute("SELECT * FROM policies WHERE hospital_id =:hid", hid=userid)
         age_mult = policies[0]["age_mult"]
         precondition_mult = policies[0]["precondition_mult"]
         symptom_mult = policies[0]["symptom_mult"]
 
-        
+        admitlen = request.form.get("admitlen")
+        if not admitlen:
+            return apology("must provide number to admit", 403)
+
         ns = db.execute("SELECT DISTINCT name FROM policies WHERE hospital_id =:hid", hid=userid)
-        
+
         #rows of patient table
-        patients = db.execute("SELECT * FROM patients_cond WHERE zip = :zip", zip=user[0]['zip'])
-        
+        patients = db.execute("SELECT * FROM patients_cond WHERE zip = :zip AND admitted=0", zip=user[0]['zip'])
+
         candidates = simulate_helper.generate_patient_obj_list(patients, age_mult, precondition_mult, symptom_mult)
-        
-        for c in candidates:
-            print(c.patient_id)
+        candidates = candidates[:int(admitlen)]
+        #for c in candidates:
+            #print(c.patient_id)
 
         length = len(candidates)
         #patients[0]['id']#first patient's id
-        
-        return render_template("queued.html", candidates=candidates, len=length, names=ns)
+
+        #updating patient update information to be admitted
+        for c in candidates:
+            db.execute("UPDATE patients_cond SET admitted= 1 WHERE id = :usid",
+                    usid=c.patient_id)
+        db.execute("UPDATE hospitals SET occupied= occupied + :len WHERE id = :usid",
+                len=length, usid=userid)
+        #updating hospital summary stats
+        user = db.execute("SELECT * FROM hospitals WHERE id = :id", id=userid)
+        patientcount = db.execute("SELECT COUNT(id) as cnt FROM patients_cond WHERE zip = :zip AND admitted=0", zip=user[0]['zip'])
+        max = min(patientcount[0]['cnt'], user[0]['bedcap'] - user[0]['occupied'])
+        return render_template("queued.html", user=user[0], candidates=candidates,
+            len=length, names=ns, patientcount=patientcount, max=max)
     #form tells you based on policy, what patients you should consider admitting
     #what resources they Required
     #age, troublebreathing, preexisting condition multiplier
@@ -285,7 +302,7 @@ def register():
 def form():
     userid=session["user_id"]
     if request.method=="POST":
-        
+
         symptoms=0;
         conditions=0;
         print(request.form.get("symptom1"))
@@ -455,7 +472,17 @@ def form():
     else:
         return render_template("request_visit.html")
 
-
+@app.route("/testgen", methods=["GET"])
+@login_required
+def testgen():
+    for x in range(0, 100):
+        db.execute("INSERT INTO patients (username, hash, zip) VALUES(:un, :h, :zip)",
+            un="jhu"+str(x), h=generate_password_hash("password"), zip=21287)
+        queryTime = int(time.time()/86400)
+        db.execute('''INSERT INTO patients_cond (id, query_time, symptoms, covid, age, conditions,zip)
+            VALUES(:id, :qt, :symptoms, 0, :age, :cond, :zip)''',
+            id=1+x, qt=queryTime, symptoms=randint(0,1), age=randint(15, 90), cond=randint(0,1), zip=21287)
+    return redirect("/")
 
 
 def errorhandler(e):

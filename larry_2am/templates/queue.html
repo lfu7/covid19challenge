@@ -6,6 +6,12 @@
 
 {% block main %}
 
+Current Resources Available:<br>
+Bed Capacity: {{user['bedcap']}}<br>
+Occupied Beds: {{user['occupied']}} <br>
+Available Beds: {{(user['bedcap'] - user['occupied'])}} <br>
+Patients in Queue: {{patientcount[0]['cnt']}} <br>
+
 Choose a policy to implement<br>
 
 <br>
@@ -18,6 +24,10 @@ Choose a policy to implement<br>
               <option value={{name['name']}}>{{name['name']}}</option>
             {% endfor %}
           </select>
+          <br>
+        Number of Patients to Admit:
+            <input autocomplete="off" autofocus class="form-control" name="admitlen" placeholder="0"
+            type="number" min="0" step="1" max={{max}}>
 <br><br>
         <button class="btn btn-primary" type="submit">Fetch Candidates</button>
 </form>

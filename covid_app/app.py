@@ -112,6 +112,7 @@ def hospital_queue():
     else:
         ns = db.execute("SELECT DISTINCT name FROM policies WHERE hospital_id =:hid", hid=userid)
         #rows of patient table
+        #abbreviated patients?
         patients = db.execute("SELECT * FROM patients WHERE zip = :zip", zip=user[0]['zipcode'])
         #patients[0]['id']#first patient's id
         candidates = patients #queuefunction(patients)
@@ -270,7 +271,7 @@ def register():
 def form():
     userid=session["user_id"]
     if request.method=="POST":
-        
+
         symptoms=0;
         conditions=0;
         print(request.form.get("symptom1"))
