@@ -6,26 +6,36 @@
 
 {% block main %}
 
-Choose a policy to implement<br>
+Current Resources Available: <br>
+Bed Capacity: {{user['bedcap']}}<br>
+Occupied Beds: {{user['occupied']}} <br>
+Available Beds: {{(user['bedcap'] - user['occupied'])}} <br>
+Patients in Queue: {{patientcount[0]['cnt']}} <br>
 
-<br>
+<br><br>
 
+Admitted Patients:<br>
 <table class="table">
   <thead>
     <tr>
       <th scope="col">Id</th>
+      <th scope="col">Age</th>
+      <th scope="col">Symptoms</th>
+      <th scope="col">Preexisting Condition</th>
     </tr>
   </thead>
   <tbody>
-    {% for row in candidates %}
+    {% for patient in candidates %}
       <tr>
-        <td>{{ row['id'] }}</td>
+        <td>{{ patient.patient_id }}</td>
+        <td>{{ patient.age }}</td>
+        <td>{{ patient.corona_symptom }}</td>
+        <td>{{ patient.pre_existing_condition }}</td>
       </tr>
     {% endfor %}
   </tbody>
 </table>
-
-
+Choose a policy to implement<br>
 <form action="/queue" method="post">
         Policy Name(s):
           <select name = "policyname"
@@ -35,7 +45,11 @@ Choose a policy to implement<br>
               <option value={{name['name']}}>{{name['name']}}</option>
             {% endfor %}
           </select>
+          Number of Patients to Admit:
+              <input autocomplete="off" autofocus class="form-control" name="admitlen" placeholder="0"
+              type="number" min="0" step="1" max={{max}}>
 <br><br>
         <button class="btn btn-primary" type="submit">Fetch Candidates</button>
 </form>
+
 {% endblock %}
