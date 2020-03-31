@@ -475,7 +475,7 @@ def form():
 @app.route("/testgen", methods=["GET"])
 @login_required
 def testgen():
-    for x in range(0, 100):
+    for x in range(0, 1200):
         db.execute("INSERT INTO patients (username, hash, zip) VALUES(:un, :h, :zip)",
             un="jhu"+str(x), h=generate_password_hash("password"), zip=21287)
         queryTime = int(time.time()/86400)
