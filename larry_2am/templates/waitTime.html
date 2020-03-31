@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Summary
+{% endblock %}
+
+{% block main %}
+
+Welcome, Patient {{user["username"]}}! <br>
+Estimated Wait Time: {{ waitTime }} Days
+
+{% endblock %}
+

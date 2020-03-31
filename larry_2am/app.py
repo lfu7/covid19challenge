@@ -130,11 +130,7 @@ def hospital_queue():
 
         candidates = simulate_helper.generate_patient_obj_list(patients, age_mult, precondition_mult, symptom_mult)
         candidates = candidates[:int(admitlen)]
-        #for c in candidates:
-            #print(c.patient_id)
 
-        length = len(candidates)
-        #patients[0]['id']#first patient's id
 
         #updating patient update information to be admitted
         for c in candidates:
@@ -477,12 +473,69 @@ def form():
 def testgen():
     for x in range(0, 1200):
         db.execute("INSERT INTO patients (username, hash, zip) VALUES(:un, :h, :zip)",
-            un="jhu"+str(x), h=generate_password_hash("password"), zip=21287)
+            un="jhu_"+str(x), h=generate_password_hash("password"), zip=21287)
         queryTime = int(time.time()/86400)
         db.execute('''INSERT INTO patients_cond (id, query_time, symptoms, covid, age, conditions,zip)
             VALUES(:id, :qt, :symptoms, 0, :age, :cond, :zip)''',
             id=1+x, qt=queryTime, symptoms=randint(0,1), age=randint(15, 90), cond=randint(0,1), zip=21287)
     return redirect("/")
+
+@app.route("/printPatients", methods=["GET", "POST"])
+@login_required
+def printPatients():
+    userid=session["user_id"]
+    user = db.execute("SELECT * FROM hospitals WHERE id = :id", id=userid)
+    if request.method=="POST":
+
+        #get the input from the text box
+        ids = request.form.get("user_id")
+        split_ids = ids.split(" ");
+
+        
+        #changes status of patients in db
+        for id in split_ids:
+            db.execute("UPDATE patients_cond SET admitted=0 WHERE id = :id",
+                       id=id)
+
+        return redirect("/printPatients")
+    else:
+        print("hello")
+        patients = db.execute("SELECT * FROM patients_cond WHERE zip = :zip AND admitted=1", zip=user[0]['zip'])
+        print(patients[0])
+        return render_template("printPatients.html", patients=patients)
+        
+@app.route("/manageVisit", methods=["GET"])
+@login_required
+def waitTime():
+    userid=session["user_id"]
+    user = db.execute("SELECT * FROM patients WHERE id = :id", id=userid)
+
+    print(user)
+    uzip=user[0]["zip"]
+
+    hospital = db.execute("SELECT * FROM hospitals WHERE zip=:zip", zip=uzip)
+    hid=hospital[0]["id"];
+
+    policies = db.execute("SELECT * FROM policies WHERE hospital_id =:hid", hid=hid)
+    age_mult = policies[0]["age_mult"]
+    precondition_mult = policies[0]["precondition_mult"]
+    symptom_mult = policies[0]["symptom_mult"]
+
+    patients = db.execute("SELECT * FROM patients_cond WHERE zip = :zip", zip=user[0]['zip'])
+
+    print(patients)
+
+    numBeds=hospital[0]["bedcap"];
+
+    patient_lst = simulate_helper.getWaitTime(patients, numBeds, age_mult, precondition_mult, symptom_mult)
+
+    waitTime=None;
+    for patient in patient_lst:
+        if patient.patient_id == userid:
+            waitTime = patient.start_time - patient.query_time
+
+
+    return render_template("waitTime.html", user=user[0], waitTime=waitTime)
 
 
 def errorhandler(e):
