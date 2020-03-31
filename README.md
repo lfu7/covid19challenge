@@ -1,7 +1,7 @@
 # covid19challenge
-To run the app enter the covid_app directory and input flask_run
-Install any dependencies if an error occurs.
-If an error occurs run:
-pip install cs50
-pip install flask_session
-Click the local host to view the app
+To run the app enter the covid_app directory and input flask_run <br />
+Install any dependencies if an error occurs. <br />
+If an error occurs run: <br />
+pip install cs50 <br />
+pip install flask_session <br />
+Click the local host to view the app <br />
