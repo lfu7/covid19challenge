@@ -473,7 +473,7 @@ def form():
 def testgen():
     for x in range(0, 1200):
         db.execute("INSERT INTO patients (username, hash, zip) VALUES(:un, :h, :zip)",
-            un="jhu"+str(x), h=generate_password_hash("password"), zip=21287)
+            un="jhu_"+str(x), h=generate_password_hash("password"), zip=21287)
         queryTime = int(time.time()/86400)
         db.execute('''INSERT INTO patients_cond (id, query_time, symptoms, covid, age, conditions,zip)
             VALUES(:id, :qt, :symptoms, 0, :age, :cond, :zip)''',
@@ -521,7 +521,7 @@ def waitTime():
     precondition_mult = policies[0]["precondition_mult"]
     symptom_mult = policies[0]["symptom_mult"]
 
-    patients = db.execute("SELECT * FROM patients_cond WHERE zip = :zip AND admitted=1", zip=user[0]['zip'])
+    patients = db.execute("SELECT * FROM patients_cond WHERE zip = :zip", zip=user[0]['zip'])
 
     print(patients)
 
@@ -529,7 +529,13 @@ def waitTime():
 
     patient_lst = simulate_helper.getWaitTime(patients, numBeds, age_mult, precondition_mult, symptom_mult)
 
-    return redirect("/")
+    waitTime=None;
+    for patient in patient_lst:
+        if patient.patient_id == userid:
+            waitTime = patient.start_time - patient.query_time
+
+
+    return render_template("waitTime.html", user=user[0], waitTime=waitTime)
 
 
 def errorhandler(e):
