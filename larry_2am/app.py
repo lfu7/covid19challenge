@@ -498,6 +498,11 @@ def printPatients():
             db.execute("UPDATE patients_cond SET admitted=0 WHERE id = :id",
                        id=id)
 
+        length = len(split_ids)
+
+        db.execute("UPDATE hospitals SET occupied= occupied - :len WHERE id = :usid",
+                len=length, usid=userid)
+
         return redirect("/printPatients")
     else:
         print("hello")
